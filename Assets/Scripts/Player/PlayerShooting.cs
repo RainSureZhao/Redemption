@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class PlayerShooting : NetworkBehaviour
 {
+    private const string PLAYER_TAG = "Player";
+
     [SerializeField] private PlayerWeapon weapon;
 
     [SerializeField] private LayerMask mask;
@@ -30,13 +32,17 @@ public class PlayerShooting : NetworkBehaviour
         RaycastHit hit;
         if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, weapon.Range, mask))
         {
-            ShootServerRpc(hit.transform.name);
+            if (hit.collider.tag == PLAYER_TAG)
+            {
+                ShootServerRpc(hit.transform.name, weapon.Damage);
+            }
         }
     }
 
     [ServerRpc]
-    private void ShootServerRpc(string hittedName)
+    private void ShootServerRpc(string hittedName, int damage)
     {
-        Debug.Log(transform.name + "hit" + hittedName);
+        var player = GameManager.instance.GetPlayer(hittedName);
+        player.TakeDamage(damage);
     }
 }

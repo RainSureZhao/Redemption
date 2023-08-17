@@ -10,41 +10,55 @@ public class PlayerSetup : NetworkBehaviour
 
     private Camera sceneCamera;
 
-    // Start is called before the first frame update
-    void Start()
+    public override void OnNetworkSpawn()
     {
-        if(!IsLocalPlayer)
+        base.OnNetworkSpawn();
+
+        if (!IsLocalPlayer)
         {
             DisableComponents();
-           
-        } else
+
+        }
+        else
         {
             sceneCamera = Camera.main;
-            if(sceneCamera != null)
+            if (sceneCamera != null)
             {
                 sceneCamera.gameObject.SetActive(false);
             }
         }
-        SetPlayerName();
+
+        var name = "Player" + GetComponent<NetworkObject>().NetworkObjectId.ToString();
+        var player = GetComponent<Player>();
+        player.Setup();
+        player.transform.name = name;
+        GameManager.instance.RegisterPlayer(name, player);
     }
 
-    private void SetPlayerName()
+    public override void OnNetworkDespawn()
     {
-        transform.name = "Player" + GetComponent<NetworkObject>().NetworkObjectId;
+        base.OnNetworkDespawn();
+
+        if (sceneCamera != null)
+        {
+            sceneCamera.gameObject.SetActive(true);
+        }
+        DisableComponents();
     }
-    
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
     private void DisableComponents()
     {
         foreach (var component in componentToDisable)
         {
             component.enabled = false;
         }
-    }
-    private void OnDisable()
-    {
-        if(sceneCamera != null)
-        {
-            sceneCamera.gameObject.SetActive(true);
-        }
+
+        GameManager.instance.UnRegisterPlayer(transform.name);
     }
 }
