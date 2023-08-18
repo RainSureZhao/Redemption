@@ -67,7 +67,10 @@ public class Player : NetworkBehaviour
         yield return new WaitForSeconds(GameManager.instance.matchingSettings.respawnTime);
 
         SetDefaults();
-        transform.position = new Vector3(0f, 10f, 0f);
+        if (IsLocalPlayer)
+        {
+            transform.position = new Vector3(0f, 10f, 0f);
+        }
     }
 
     private void DieOnServer()
@@ -90,10 +93,9 @@ public class Player : NetworkBehaviour
         var col = GetComponent<Collider>();
         col.enabled = false;
 
-        if (IsLocalPlayer)
-        {
-            StartCoroutine(Respawn());
-        }
+        
+        StartCoroutine(Respawn());
+        
     }
     public int GetHealth()
     {

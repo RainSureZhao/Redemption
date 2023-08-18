@@ -7,7 +7,9 @@ public class PlayerShooting : NetworkBehaviour
 {
     private const string PLAYER_TAG = "Player";
 
-    [SerializeField] private PlayerWeapon weapon;
+    private WeaponManager weaponManager;
+
+    private PlayerWeapon currentWeapon;
 
     [SerializeField] private LayerMask mask;
 
@@ -16,25 +18,44 @@ public class PlayerShooting : NetworkBehaviour
     void Start()
     {
         cam = GetComponentInChildren<Camera>();
+        weaponManager = GetComponent<WeaponManager>(); 
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetButtonDown("Fire1"))
+        currentWeapon = weaponManager.GetCurrentWeapon();
+
+        if (currentWeapon.shootRate <= 0)
         {
-            Shoot();
+            if (Input.GetButtonDown("Fire1"))
+            {
+                Shoot();
+            }
         }
+        else
+        {
+            if (Input.GetButtonDown("Fire1"))
+            {
+                InvokeRepeating("Shoot", 0f, 1f / currentWeapon.shootRate);
+            } else if (Input.GetButtonUp("Fire1"))
+            {
+                CancelInvoke("Shoot");
+            }
+        }
+
+        
     }
 
     private void Shoot()
     {
+        Debug.Log("Shoot !!!!");
         RaycastHit hit;
-        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, weapon.Range, mask))
+        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, currentWeapon.Range, mask))
         {
             if (hit.collider.tag == PLAYER_TAG)
             {
-                ShootServerRpc(hit.transform.name, weapon.Damage);
+                ShootServerRpc(hit.transform.name, currentWeapon.Damage);
             }
         }
     }
