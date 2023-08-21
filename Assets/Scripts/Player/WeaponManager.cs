@@ -12,6 +12,8 @@ public class WeaponManager : NetworkBehaviour
     [SerializeField] private GameObject weaponHolder;
 
     private PlayerWeapon currentWeapon;
+
+    private WeaponGraphics currentweaponGraphics;
     // Start is called before the first frame update
     void Start()
     {
@@ -27,11 +29,17 @@ public class WeaponManager : NetworkBehaviour
         }
         var weaponObject = Instantiate(currentWeapon.graphics, weaponHolder.transform.position, weaponHolder.transform.rotation);
         weaponObject.transform.SetParent(weaponHolder.transform);
+        currentweaponGraphics = weaponObject.GetComponent<WeaponGraphics>();
     }
 
     public PlayerWeapon GetCurrentWeapon()
     {
         return currentWeapon;
+    }
+
+    public WeaponGraphics GetCurrentGraphics()
+    {
+        return currentweaponGraphics;
     }
 
     public void ToggleWeapon()
