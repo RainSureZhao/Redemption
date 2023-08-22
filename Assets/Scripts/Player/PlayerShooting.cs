@@ -12,9 +12,13 @@ public class PlayerShooting : NetworkBehaviour
 
     private PlayerWeapon currentWeapon;
 
+    private float shootCoolDownTime = 0f; // 距离上次开枪时间过了多久
+    private int autoShootCount = 0; // 当前一共连开了多少枪
+
     [SerializeField] private LayerMask mask;
 
     private Camera cam;
+    private PlayerController playerController;
 
     enum HitEffectMaterial
     {
@@ -26,26 +30,32 @@ public class PlayerShooting : NetworkBehaviour
     {
         cam = GetComponentInChildren<Camera>();
         weaponManager = GetComponent<WeaponManager>(); 
+        playerController = GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
     void Update()
     {
+        shootCoolDownTime += Time.deltaTime;
+
         if (!IsLocalPlayer) return;
 
         currentWeapon = weaponManager.GetCurrentWeapon();
 
-        if (currentWeapon.shootRate <= 0)
+        if (currentWeapon.shootRate <= 0 )
         {
-            if (Input.GetButtonDown("Fire1"))
+            if (Input.GetButtonDown("Fire1") && shootCoolDownTime >= currentWeapon.shootCoolDownTime)
             {
+                autoShootCount = 0;
                 Shoot();
+                shootCoolDownTime = 0f;
             }
         }
         else
         {
             if (Input.GetButtonDown("Fire1"))
             {
+                autoShootCount = 0;
                 InvokeRepeating("Shoot", 0f, 1f / currentWeapon.shootRate);
             } else if (Input.GetButtonUp("Fire1") || Input.GetKeyDown(KeyCode.Q))
             {
@@ -90,30 +100,42 @@ public class PlayerShooting : NetworkBehaviour
         OnHitClientRpc(pos, normal, material);
     }
 
-    private void OnShoot() // 每次射击相关的逻辑，包括特效、声音等
+    private void OnShoot(float recoilForce) // 每次射击相关的逻辑，包括特效、声音等
     {
         weaponManager.GetCurrentGraphics().muzzleFlash.Play();
+        weaponManager.GetCurrentAudioSource().Play();
+
+        if (IsLocalPlayer)
+        {
+            playerController.AddRecoilForce(recoilForce);
+        }
     }
 
     [ClientRpc]
-    private void OnShootClientRpc()
+    private void OnShootClientRpc(float recoilForce)
     {
-        OnShoot();
+        OnShoot(recoilForce);
     }
 
     [ServerRpc]
-    private void OnShootServerRpc()
+    private void OnShootServerRpc(float recoilForce)
     {
         if (!IsHost)
         {
-            OnShoot();
+            OnShoot(recoilForce);
         }
-        OnShootClientRpc();
+        OnShootClientRpc(recoilForce);
     }
 
     private void Shoot()
     {
-        OnShootServerRpc();
+        autoShootCount++;
+        float recoilForce = currentWeapon.recoilForce;
+        if (autoShootCount <= 3)
+        {
+            recoilForce /= 5f;
+        }
+        OnShootServerRpc(recoilForce);
 
         RaycastHit hit;
         if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, currentWeapon.Range, mask))

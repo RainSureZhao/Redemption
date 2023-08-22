@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using Random = System.Random;
 
 public class PlayerController : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 _yRotation = Vector3.zero; // 旋转角色的速度
     
     private Vector3 _xRotation = Vector3.zero; // 旋转视角的速度
+
+    private float recoilForce = 0f; // 累积的后坐力
 
     private float _cameraRotationTotal = 0f;   // 累计转了多少度
 
@@ -36,6 +39,11 @@ public class PlayerController : MonoBehaviour
     {
         _thrusterForce = thrustForce;
     }
+
+    public void AddRecoilForce(float newRecoilForce)
+    {
+        recoilForce += newRecoilForce;
+    }
     private void PerformMovement()
     {
         if (_velocity != Vector3.zero)
@@ -51,17 +59,25 @@ public class PlayerController : MonoBehaviour
 
     private void PerformRotation()
     {
-        if (_yRotation != Vector3.zero)
+        if (recoilForce < 0.1f)
         {
-            rb.transform.Rotate(_yRotation);
+            recoilForce = 0f;
         }
 
-        if (_xRotation != Vector3.zero)
+        if (_yRotation != Vector3.zero || recoilForce > 0f)
         {
-            _cameraRotationTotal += _xRotation.x;
+            Random rd = new Random();
+            rb.transform.Rotate(_yRotation + rb.transform.up * (float)(rd.NextDouble() * 2 - 1) * 2 * recoilForce);
+        }
+
+        if (_xRotation != Vector3.zero || recoilForce > 0f)
+        {
+            _cameraRotationTotal += _xRotation.x - recoilForce;
             _cameraRotationTotal = Math.Clamp(_cameraRotationTotal, -cameraRotationLimit, cameraRotationLimit);
             cam.transform.localEulerAngles = new Vector3(_cameraRotationTotal, 0f, 0f);
         }
+
+        recoilForce *= 0.5f;
     }
     private void FixedUpdate()
     {

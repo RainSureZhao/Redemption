@@ -14,6 +14,8 @@ public class WeaponManager : NetworkBehaviour
     private PlayerWeapon currentWeapon;
 
     private WeaponGraphics currentweaponGraphics;
+
+    private AudioSource currentAudioSource;
     // Start is called before the first frame update
     void Start()
     {
@@ -30,6 +32,12 @@ public class WeaponManager : NetworkBehaviour
         var weaponObject = Instantiate(currentWeapon.graphics, weaponHolder.transform.position, weaponHolder.transform.rotation);
         weaponObject.transform.SetParent(weaponHolder.transform);
         currentweaponGraphics = weaponObject.GetComponent<WeaponGraphics>();
+        currentAudioSource = weaponObject.GetComponent<AudioSource>();
+
+        if (IsLocalPlayer)
+        {
+            currentAudioSource.spatialBlend = 0f;
+        }
     }
 
     public PlayerWeapon GetCurrentWeapon()
@@ -42,6 +50,10 @@ public class WeaponManager : NetworkBehaviour
         return currentweaponGraphics;
     }
 
+    public AudioSource GetCurrentAudioSource()
+    {
+        return currentAudioSource;
+    }
     public void ToggleWeapon()
     {
         if (currentWeapon == primaryWeapon)

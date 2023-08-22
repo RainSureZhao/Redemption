@@ -10,7 +10,4 @@ public class WeaponGraphics : MonoBehaviour
 
     public GameObject stoneHitEffectPrefab; // 击中石头的特效
 
-
-
-
 }
